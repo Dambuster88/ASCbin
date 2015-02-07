@@ -1,14 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef signed char		s8;
-typedef unsigned char	u8;
-typedef signed short	s16;
-typedef unsigned short	u16;
-typedef signed int		s32;
-typedef unsigned int	u32;
-typedef signed long		s64;
-typedef unsigned long	u64;
+#include "type_defines.h"
 
 typedef union {
 	u8		byte[4];
@@ -17,6 +9,12 @@ typedef union {
 
 int main (int argc, char *argv[])
 {
+	char 	FilePath[MAX_PATH];
+
+	FILE*	pInputFile;
+	FILE*	pOutputFile;
+	
+	
 	u32			i		= 0;
 	double 		dbl		= 0;
 	float_t		flv;
