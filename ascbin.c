@@ -2,11 +2,6 @@
 #include <stdlib.h>
 #include "type_defines.h"
 
-typedef union {
-	u8		byte[4];
-	float	fl;
-} float_t;
-
 int main (int argc, char *argv[])
 {
 	char 	FilePath[MAX_PATH];
@@ -15,9 +10,9 @@ int main (int argc, char *argv[])
 	FILE*	pOutputFile;
 	
 	
-	u32			i		= 0;
-	double 		dbl		= 0;
-	float_t		flv;
+	uint32_t		i		= 0;
+	double 			dbl		= 0;
+	float_union_t	flv;
 	flv.fl	= 0.0;
 	
 	printf ("%s + %u\r\n", argv[0], argc-1);
