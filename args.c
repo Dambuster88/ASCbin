@@ -10,7 +10,7 @@ uint32_t GetArgs (char argv[])
 	uint32_t	i = 0;
 	uint32_t	option = 1;
 
-	if (argv[0] == '-') {
+	if (argv[0] == '-' || argv[0] == '/') {
 		i = 1;
 		switch (argv[i]) {
 			case 'h':	// all hex
