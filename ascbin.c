@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "type_defines.h"
 #include "args.h"
 #include "hex.h"
@@ -15,7 +16,7 @@ int main (int argc, char *argv[])
 	
 	uint32_t	i = 0;
 	
-	uint32_t	inLines = 1;
+	uint32_t	inLines = 0;
 	uint32_t	inWords = 0;
 	uint32_t	WordInLine = 0;
 
@@ -57,15 +58,23 @@ int main (int argc, char *argv[])
 				switch (options) {
 					case 2:
 					if (GetHex (pWord, pOutputFile) == 0) {
-						printf ("ERROR: Invalid HEX Word at line %u, word %u: %s", inLines, WordInLine, pWord);
+						printf ("ERROR: Invalid HEX Word at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
 						return 1;
 					};
 					break;
 					
+					case 3:
+					if (GetDec (pWord, pOutputFile) == 0) {
+						printf ("ERROR: Invalid DEC Word at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
+						fclose (pInputFile);
+						fclose (pOutputFile);
+					};
+					break;
+					
 					default:
-					printf ("ERROR: Unknown word type at line %u, word %u: %s", inLines, WordInLine, pWord);
+					printf ("ERROR: Unknown word type at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
 					fclose (pInputFile);
 					fclose (pOutputFile);
 					return 1;
