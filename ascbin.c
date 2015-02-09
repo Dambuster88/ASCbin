@@ -66,8 +66,9 @@ int main (int argc, char *argv[])
 					break;
 					
 					case 3:
-					if (GetDec (pWord, pOutputFile) == 0) {
-						printf ("ERROR: Invalid DEC Word at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
+					i = GetDec (pWord, pOutputFile);
+					if (i) {
+						printf ("ERROR [%u]: Invalid DEC Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
 					};
