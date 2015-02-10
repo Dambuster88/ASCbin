@@ -6,8 +6,6 @@
 #include "dec.h"
 #include "args.h"
 
-uint32_t power10 (uint8_t power);
-
 uint32_t GetDec (char* str, uint8_t BigEndian, FILE* output)
 {
 	uint32_t	i			= 0;

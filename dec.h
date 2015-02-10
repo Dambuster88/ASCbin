@@ -12,4 +12,6 @@ uint8_t	ASCIItoDEC_s2byte (char* str, sint16_t* result);
 uint8_t	ASCIItoDEC_u4byte (char* str, uint32_t* result);
 uint8_t	ASCIItoDEC_s4byte (char* str, sint32_t* result);
 
+uint32_t power10 (uint8_t power);
+
 #endif
