@@ -5,6 +5,7 @@
 #include "type_defines.h"
 #include "args.h"
 #include "hex.h"
+#include "flt.h"
 
 #define WORD_SEPARATORS " \n\r\t"
 
@@ -85,8 +86,13 @@ int main (int argc, char *argv[])
 					break;
 					
 					case ALL_FLOAT:
-					printf ("Not implemented yet!\r\n");
-					return 0;
+					i = GetFlt (pWord, Options.BigEndian, pOutputFile);
+					if (i) {
+						printf ("ERROR [%u]: Invalid FLOAT Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
+						fclose (pInputFile);
+						fclose (pOutputFile);
+					};
+					break;
 					
 					case ALL_ASCII:
 					printf ("Not implemented yet!\r\n");
