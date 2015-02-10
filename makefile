@@ -1,7 +1,7 @@
 
 COMPILER = gcc
 DEFINES = 
-FILES = ascbin.c args.c hex.c
+FILES = ascbin.c args.c hex.c dec.c
 
 make:
 	$(COMPILER) -o ascbin $(FILES)
