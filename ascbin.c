@@ -53,16 +53,22 @@ int main (int argc, char *argv[])
 		WordInLine = 0;
 		if (tmpStr != NULL) {
 			for (pWord = strtok(tmpStr, WORD_SEPARATORS); pWord != NULL; pWord = strtok(NULL, WORD_SEPARATORS)) {
-				if (pWord[0] == ';' || pWord[0] == '#') {
+				if (pWord[0] == ';' || pWord[0] == '#')
 					break;
-				}
+				
 				inWords ++;
 				WordInLine ++;
 				WordLen = strlen (pWord);
 				
-				if (Options.AllTheSame == ANYKIND) {
-					// TODO
-				} else
+				if (Options.AllTheSame == ANYKIND)
+					if (strchr(pWord, ':'))
+						if (strchr(pWord, '.'))
+							options = ALL_FLOAT;
+						else
+							options = ALL_DEC;
+					else
+						options = ALL_HEX;
+				else
 					options = Options.AllTheSame;
 				
 				switch (options) {
@@ -95,7 +101,7 @@ int main (int argc, char *argv[])
 					break;
 					
 					case ALL_ASCII:
-					printf ("Not implemented yet!\r\n");
+					printf ("ASCII chars not implemented yet!\r\n");
 					return 0;
 					
 					default:
@@ -104,8 +110,6 @@ int main (int argc, char *argv[])
 					fclose (pOutputFile);
 					return 1;
 				}
-				//printf ("%s", pWord);
-				//getchar ();
 			}
 		} else {
 			printf ("ERROR: Unknown error occurred at read!\r\n");
