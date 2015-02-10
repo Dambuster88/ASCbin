@@ -8,6 +8,7 @@
 
 #define WORD_SEPARATORS " \n\r\t"
 
+
 int main (int argc, char *argv[])
 {
 	uint32_t	options = 0;
@@ -25,6 +26,9 @@ int main (int argc, char *argv[])
 	uint32_t	WordLen = 0;
 	
 	char*	result;
+	
+	Options.AllTheSame	= 0;
+	Options.BigEndian	= 0;
 
 	if (argc == 3) {
 		options = GetArgs(argv[1]);
@@ -55,8 +59,13 @@ int main (int argc, char *argv[])
 				WordInLine ++;
 				WordLen = strlen (pWord);
 				
+				if (Options.AllTheSame == ANYKIND) {
+					// TODO
+				} else
+					options = Options.AllTheSame;
+				
 				switch (options) {
-					case 2:
+					case ALL_HEX:
 					if (GetHex (pWord, pOutputFile) == 0) {
 						printf ("ERROR: Invalid HEX Word at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
 						fclose (pInputFile);
@@ -65,14 +74,22 @@ int main (int argc, char *argv[])
 					};
 					break;
 					
-					case 3:
-					i = GetDec (pWord, pOutputFile);
+					case ALL_DEC:
+					i = GetDec (pWord, Options.BigEndian, pOutputFile);
 					if (i) {
 						printf ("ERROR [%u]: Invalid DEC Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
 					};
 					break;
+					
+					case ALL_FLOAT:
+					printf ("Not implemented yet!\r\n");
+					return 0;
+					
+					case ALL_ASCII:
+					printf ("Not implemented yet!\r\n");
+					return 0;
 					
 					default:
 					printf ("ERROR: Unknown word type at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);

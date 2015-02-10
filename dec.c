@@ -4,10 +4,11 @@
 //#include <stdlib.h>
 #include "type_defines.h"
 #include "dec.h"
+#include "args.h"
 
 uint32_t power10 (uint8_t power);
 
-uint32_t GetDec (char* str, FILE* output)
+uint32_t GetDec (char* str, uint8_t BigEndian, FILE* output)
 {
 	uint32_t	i			= 0;
 	uint32_t	WordLen 	= 0;
@@ -23,8 +24,6 @@ uint32_t GetDec (char* str, FILE* output)
 	sint16_union_t	stmp16;
 	uint32_union_t	tmp32;
 	sint32_union_t	stmp32;
-	
-
 	
 	WordLen = strlen (str);
 	if (WordLen <= 2)
@@ -77,12 +76,12 @@ uint32_t GetDec (char* str, FILE* output)
 		if (unsig) {
 			i = ASCIItoDEC_u4byte(pWord, &tmp32.uint);
 			if (i)
-				return i;
+				return 10+i;
 			chars = tmp32.byte;
 		} else {
 			i = ASCIItoDEC_s4byte(pWord, &stmp32.sint);
 			if (i)
-				return i;
+				return 10+i;
 			chars = stmp32.byte;
 		}
 		break;
@@ -92,10 +91,16 @@ uint32_t GetDec (char* str, FILE* output)
 		return 4;
 	}
 	
-	for (i = 0; i < (str[0] - '0'); i++) {
-		if (fputc (chars[i], output) != chars[i])
-			return 20;
-	}
+	if (BigEndian == BIG_ENDIAN) {
+		for (i = (str[0] - '0'); i > 0; i--)
+			if (fputc(chars[i-1], output) != chars[i-1])
+				return 21;
+	} else if (BigEndian == LITTLE_ENDIAN) {
+		for (i = 0; i < (str[0] - '0'); i++)
+			if (fputc(chars[i], output) != chars[i])
+				return 22;
+	} else
+		return 20;
 		
 	return 0;
 }
