@@ -66,8 +66,9 @@ int main (int argc, char *argv[])
 				
 				switch (options) {
 					case ALL_HEX:
-					if (GetHex (pWord, pOutputFile) == 0) {
-						printf ("ERROR: Invalid HEX Word at line %u, word %u: %s\r\n", inLines, WordInLine, pWord);
+					i = GetHex (pWord, Options.BigEndian, pOutputFile);
+					if (i) {
+						printf ("ERROR [%u]: Invalid HEX Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
 						return 1;
