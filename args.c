@@ -4,15 +4,16 @@
 #include "type_defines.h"
 #include "args.h"
 
+char WORD_SEPARATORS [20] = " \t\r\n";
+
 uint32_t GetArgs (char argv[])
 {
 	uint32_t	i = 0;
-	uint32_t	option = 1;
 	uint32_t	WordLen = 0;
 	
 	WordLen = strlen(argv);
 	if (WordLen == 0)
-		return 0;
+		return 1;
 
 	if (argv[0] == '-' || argv[0] == '/') {
 		argv = &argv[1];
@@ -20,54 +21,60 @@ uint32_t GetArgs (char argv[])
 			switch (argv[i]) {
 				case 'h':	// all hex
 				if (Options.AllTheSame)
-					return 0;
+					return 21;
 				Options.AllTheSame = ALL_HEX;
 				printf ("All should be HEX!\r\n");
 				break;
 				
 				case 'd':	// all decimal
 				if (Options.AllTheSame)
-					return 0;
+					return 22;
 				Options.AllTheSame = ALL_DEC;
 				printf ("All should be Decimal!\r\n");
 				break;
 				
 				case 'f':	// all float
 				if (Options.AllTheSame)
-					return 0;
+					return 23;
 				Options.AllTheSame = ALL_FLOAT;
 				printf ("All should be Float!\r\n");
 				break;
 				
 				case 'c':	//all ASCII
 				if (Options.AllTheSame)
-					return 0;
+					return 24;
 				Options.AllTheSame = ALL_ASCII;
 				printf ("All should be ASCII!\r\n");
 				break;
 				
 				case 'l':
 				if (Options.BigEndian)
-					return 0;
+					return 25;
 				Options.BigEndian = LITTLE_ENDIAN;
 				printf ("Little Endian output will be used!\r\n");
 				break;
 				
 				case 'b':
 				if (Options.BigEndian)
-					return 0;
+					return 26;
 				Options.BigEndian = BIG_ENDIAN;
 				printf ("Big Endian output will be used!\r\n");
 				break;
 				
+				case 's':
+				if (Options.Separator)
+					return 27;
+				Options.Separator = 1;
+				break;
+				
 				case 'r':	//reverse
 				printf ("Reverse!\r\n");
-				return 0;
+				return 28;
 				break;
 				
 				default:
 				printf ("ERROR: Unknown parameter: %c!\r\n", argv[i]);
-				return 0;
+				return 20;
 			};
 		};
 	};
@@ -81,7 +88,118 @@ uint32_t GetArgs (char argv[])
 		printf ("Little Endian output will be used, by default!\r\n");
 	};
 	
-	return option;
+	return 0;
+}
+
+uint32_t GetSeparators (char text[])
+{
+	uint32_t	i = 0;
+	uint32_t	j = 0;
+	uint32_t	WordLen = 0;
+	uint32_t	index = 0;
+	char		new_separator;
+	
+	index = strlen (WORD_SEPARATORS);
+	WordLen = strlen (text);
+	
+	for (i = 0; i < WordLen && index < 20; i++) {
+		if (text[i] == '\\') {
+			switch (text[i+1]) {
+				case '\'':
+				new_separator = 0x27;
+				break;
+				
+				case '\"':
+				new_separator = 0x22;
+				break;
+				
+				case '\?':
+				new_separator = 0x3F;
+				break;
+				
+				case '\\':
+				new_separator = 0x5C;
+				break;
+				
+				case 'a':
+				new_separator = 0x07;
+				break;
+				
+				case 'b':
+				new_separator = 0x08;
+				break;
+				
+				case 'f':
+				new_separator = 0x0C;
+				break;
+				
+				case 'n':
+				new_separator = 0x0A;
+				break;
+				
+				case 'r':
+				new_separator = 0x0D;
+				break;
+				
+				case 't':
+				new_separator = 0x09;
+				break;
+				
+				case 'v':
+				new_separator = 0x0B;
+				break;
+				
+				case '0' ... '9':
+				printf ("ERROR: Not supported character format: \\nnn\r\n");
+				return 1;
+				
+				case 'x':
+				if ((text[i+2] >= '0' && text[i+2] <= '9')) {
+					new_separator = (char)(16 * (text[i+2] - '0'));
+				} else if ((text[i+2] >= 'a' && text[i+2] <= 'f')) {
+					new_separator = (char)(16 * (text[i+2] - 'a' + 10));
+				} else if ((text[i+2] >= 'A' && text[i+2] <= 'F')) {
+					new_separator = (char)(16 * (text[i+2] - 'A' + 10));
+				} else {
+					printf ("ERROR: Invalid separator format: \\x%c%c\r\n", text[i+2], text[i+3]);
+				}
+
+				if ((text[i+3] >= '0' && text[i+3] <= '9')) {
+					new_separator += (char) (text[i+3] - '0');
+				} else if ((text[i+3] >= 'a' && text[i+3] <= 'f')) {
+					new_separator += (char) (text[i+3] - 'a' + 10);
+				} else if ((text[i+3] >= 'A' && text[i+3] <= 'F')) {
+					new_separator += (char) (text[i+3] - 'A' + 10);
+				} else {
+					printf ("ERROR: Invalid separator format: \\x%c%c\r\n", text[i+2], text[i+3]);
+				}
+				
+				i += 2;
+				break;
+				
+				case 'u':
+				printf ("ERROR: Not supported character format: \\unnnn\r\n");
+				return 1;
+				
+				case 'U':
+				printf ("ERROR: Not supported character format: \\Unnnnnnnn\r\n");
+				return 1;
+				
+				default:
+				printf ("ERROR: Unknown escape sequence: \\%c\r\n", text[i+1]);
+				return 1;
+			}
+			i++;
+		} else {
+			new_separator = text[i];
+		}
+		
+		if (!strchr(WORD_SEPARATORS, new_separator)) {
+			WORD_SEPARATORS[index] = new_separator;
+			index++;
+		}
+		// else {nothing to do!}
+	}
 }
 
 FILE* GetInput (char path[]) 

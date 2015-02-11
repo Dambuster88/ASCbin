@@ -7,14 +7,11 @@
 #include "hex.h"
 #include "flt.h"
 
-#define WORD_SEPARATORS " \n\r\t"
-
-
 int main (int argc, char *argv[])
 {
-	uint32_t	options = 0;
-	FILE*	pInputFile;
-	FILE*	pOutputFile;
+	uint32_t	options	= 0;
+	FILE*		pInputFile;
+	FILE*		pOutputFile;
 	
 	uint32_t	i = 0;
 	
@@ -22,28 +19,50 @@ int main (int argc, char *argv[])
 	uint32_t	inWords = 0;
 	uint32_t	WordInLine = 0;
 
-	char	tmpStr[4096];
-	char*	pWord;
+	char		tmpStr[4096];
+	char*		pWord;
 	uint32_t	WordLen = 0;
 	
-	char*	result;
+	char*		result;
 	
 	Options.AllTheSame	= 0;
 	Options.BigEndian	= 0;
+	Options.Separator	= 0;
 
-	if (argc == 3) {
-		options = GetArgs(argv[1]);
-		pInputFile = GetInput (argv[2]);
-	} else if (argc == 2) {
-		Options.AllTheSame	= ANYKIND;
-		Options.BigEndian	= LITTLE_ENDIAN;
-		pInputFile = GetInput (argv[1]);
+	
+	if (argc > 1) {
+		if (argv[1][0] == '-' || argv[1][0] == '/') {
+			i = GetArgs(argv[1]);
+			if (i) {
+				printf ("ERROR: Unexpected error: 01, %u", i);
+				return 1;
+			}
+			
+			if (Options.Separator) {
+				GetSeparators (argv[2]);
+				if (argc == 4)
+					pInputFile = GetInput (argv[3]);
+				else
+					pInputFile = GetInput ("input.txt");
+			} else {
+				if (argc == 3)
+					pInputFile = GetInput (argv[2]);
+				else
+					pInputFile = GetInput ("input.txt");
+			}
+		} else {
+			// no options, should be only the input file
+			Options.AllTheSame	= ANYKIND;
+			Options.BigEndian	= LITTLE_ENDIAN;
+			pInputFile = GetInput (argv[1]);
+		}
 	} else {
+		// no arguments, input.txt file is used by default
 		Options.AllTheSame	= ANYKIND;
 		Options.BigEndian	= LITTLE_ENDIAN;
 		pInputFile = GetInput ("input.txt");
 	}
-	
+
 	pOutputFile = GetOutput ();
 	if (pOutputFile == NULL) {
 		fclose (pInputFile);

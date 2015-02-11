@@ -17,9 +17,13 @@ enum {
 struct Options_tag {
 	uint8_t	AllTheSame;
 	uint8_t BigEndian;
+	uint8_t Separator;
 } Options;
 
+extern char WORD_SEPARATORS[];
+
 uint32_t GetArgs (char argv[]);
+uint32_t GetSeparators (char text[]);
 FILE* GetInput (char path[]);
 FILE* GetOutput (void);
 
