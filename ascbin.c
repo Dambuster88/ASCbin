@@ -34,8 +34,14 @@ int main (int argc, char *argv[])
 	if (argc == 3) {
 		options = GetArgs(argv[1]);
 		pInputFile = GetInput (argv[2]);
-	} else {
+	} else if (argc == 2) {
+		Options.AllTheSame	= ANYKIND;
+		Options.BigEndian	= LITTLE_ENDIAN;
 		pInputFile = GetInput (argv[1]);
+	} else {
+		Options.AllTheSame	= ANYKIND;
+		Options.BigEndian	= LITTLE_ENDIAN;
+		pInputFile = GetInput ("input.txt");
 	}
 	
 	pOutputFile = GetOutput ();
