@@ -28,6 +28,7 @@ int main (int argc, char *argv[])
 	Options.AllTheSame	= 0;
 	Options.BigEndian	= 0;
 	Options.Separator	= 0;
+	Options.Format		= 0;
 
 	
 	if (argc > 1) {
@@ -38,18 +39,25 @@ int main (int argc, char *argv[])
 				return 1;
 			}
 			
-			if (Options.Separator) {
+			if (Options.Separator)
 				GetSeparators (argv[2]);
-				if (argc == 4)
-					pInputFile = GetInput (argv[3]);
+			
+			if (Options.Format)
+				if (Options.Separator)
+					i = GetFormat (argv[3]);
 				else
-					pInputFile = GetInput ("input.txt");
-			} else {
-				if (argc == 3)
-					pInputFile = GetInput (argv[2]);
-				else
-					pInputFile = GetInput ("input.txt");
+					i = GetFormat (argv[2]);
+
+			if (i) {
+				printf ("ERROR[%u]: Invalid Line Format!\r\n", i);
+				return 1;
 			}
+				
+			i = argc - 2 - Options.Separator - Options.Format;
+			if (i)
+				pInputFile = GetInput (argv[argc - 1]);
+			else
+				pInputFile = GetInput ("input.txt");
 		} else {
 			// no options, should be only the input file
 			Options.AllTheSame	= ANYKIND;
