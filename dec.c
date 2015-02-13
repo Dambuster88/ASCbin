@@ -6,12 +6,12 @@
 #include "dec.h"
 #include "args.h"
 
-uint32_t GetDec (char* str, uint8_t BigEndian, FILE* output)
+uint32_t CheckInt (char* str, char** OutStr)
 {
 	uint32_t	i			= 0;
 	uint32_t	WordLen 	= 0;
 	
-	uint8_t		unsig		= 1;
+	uint8_t		sig			= 0;
 	
 	uint8_t*	pWord;
 	uint8_t*	chars;
@@ -23,16 +23,18 @@ uint32_t GetDec (char* str, uint8_t BigEndian, FILE* output)
 	uint32_union_t	tmp32;
 	sint32_union_t	stmp32;
 	
+	uint8_t	result;
+	
 	WordLen = strlen (str);
 	if (WordLen <= 2)
 		return 1;
 	
 	if (str[1] != ':') {
 		if (str[1] == 's' && str[2] == ':' && WordLen > 3) {			// signed
-			unsig = 0;
+			sig = 1;
 			pWord = &str[3];
 		} else if (str[1] == 'u' && str[2] == ':' && WordLen > 3) {		// unsigned
-			unsig = 1;
+			sig = 0;
 			pWord = &str[3];
 			if (pWord[0] == '-')
 				return 3;
@@ -41,69 +43,21 @@ uint32_t GetDec (char* str, uint8_t BigEndian, FILE* output)
 	} else
 		pWord = &str[2];
 	
-	switch (str[0] - '0') {
-		case 1:
-		if (unsig) {
-			i = ASCIItoDEC_u1byte(pWord, &tmpChar);
-			if (i)
-				return 10+i;
-			chars = &tmpChar;
-		} else {
-			i = ASCIItoDEC_s1byte(pWord, &stmpChar);
-			if (i)
-				return 10+i;
-			chars = &stmpChar;
-		}
-		break;
-		
-		case 2:
-		if (unsig) {
-			i = ASCIItoDEC_u2byte(pWord, &tmp16.uint);
-			if (i)
-				return 10+i;
-			chars = tmp16.byte;	
-		} else {
-			i = ASCIItoDEC_s2byte(pWord, &stmp16.sint);
-			if (i)
-				return 10+i;
-			chars = stmp16.byte;
-		}
-		break;
-		
-		case 4:
-		if (unsig) {
-			i = ASCIItoDEC_u4byte(pWord, &tmp32.uint);
-			if (i)
-				return 10+i;
-			chars = tmp32.byte;
-		} else {
-			i = ASCIItoDEC_s4byte(pWord, &stmp32.sint);
-			if (i)
-				return 10+i;
-			chars = stmp32.byte;
-		}
-		break;
-		
-		default:
-		printf ("ERROR: Wrong data size: %u!\r\n", str[0]);
+	if (str[0] == '4')
+		result = B4;
+	else if (str[0] == '2')
+		result = B2;
+	else if (str[0] == '1')
+		result = B1;
+	else
 		return 4;
-	}
 	
-	if (BigEndian == BIG_ENDIAN) {
-		for (i = (str[0] - '0'); i > 0; i--)
-			if (fputc(chars[i-1], output) != chars[i-1])
-				return 21;
-	} else if (BigEndian == LITTLE_ENDIAN) {
-		for (i = 0; i < (str[0] - '0'); i++)
-			if (fputc(chars[i], output) != chars[i])
-				return 22;
-	} else
-		return 20;
-		
-	return 0;
+	*OutStr = pWord;
+
+	return SET_TYPE(INT) | SET_SIGN(sig) | SET_SIZE(result);
 }
 
-uint8_t	ASCIItoDEC_u1byte (char* str, uint8_t* result)
+uint8_t	ASCIItoDEC_u1byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
@@ -125,12 +79,12 @@ uint8_t	ASCIItoDEC_u1byte (char* str, uint8_t* result)
 			return 2;
 	}
 	
-	*result = (uint8_t) tmpResult;
+	result[0] = tmpResult;
 	
 	return 0;
 }
 
-uint8_t	ASCIItoDEC_s1byte (char* str, sint8_t* result)
+uint8_t	ASCIItoDEC_s1byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
@@ -166,20 +120,23 @@ uint8_t	ASCIItoDEC_s1byte (char* str, sint8_t* result)
 		return 4;
 	
 	if (negative)
-		*result = (sint8_t) ((sint8_t) 0 - tmpResult);
+		tmpResult = ((sint8_t) 0 - tmpResult);
 	else
-		*result = (sint8_t) ((sint8_t) 0 + tmpResult);
+		tmpResult = ((sint8_t) 0 + tmpResult);
+	
+	result[0] = tmpResult;
 	
 	return 0;
 }
 
-uint8_t	ASCIItoDEC_u2byte (char* str, uint16_t* result)
+uint8_t	ASCIItoDEC_u2byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
-	
-	uint16_t	tmpResult = 0;
-	uint16_t	lastResult = 0;
+
+	uint16_t		lastResult = 0;	
+	uint16_union_t	tmpResult;
+	tmpResult.uint	= 0;
 	
 	WordLen = strlen(str);
 	if (WordLen == 0 || WordLen > 5)
@@ -187,20 +144,21 @@ uint8_t	ASCIItoDEC_u2byte (char* str, uint16_t* result)
 
 	for (i = 0; i < WordLen; i++) {
 		if (str[i] >= '0' && str[i] <= '9') {
-			tmpResult += (str[i] - '0') * power10(WordLen - i - 1);
-			if (tmpResult < lastResult)		// overflow protection!
+			tmpResult.uint += (str[i] - '0') * power10(WordLen - i - 1);
+			if (tmpResult.uint < lastResult)		// overflow protection!
 				return 3;
-			lastResult = tmpResult;
+			lastResult = tmpResult.uint;
 		} else
 			return 2;
 	}
 	
-	*result = (uint16_t) tmpResult;
+	for (i = 0; i < 2; i++)
+		result[i] = tmpResult.byte[i];
 	
 	return 0;
 }
 
-uint8_t	ASCIItoDEC_s2byte (char* str, sint16_t* result)
+uint8_t	ASCIItoDEC_s2byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
@@ -208,8 +166,9 @@ uint8_t	ASCIItoDEC_s2byte (char* str, sint16_t* result)
 	uint8_t		negative	= 0;
 	uint8_t		signal		= 0;
 	
-	uint16_t	tmpResult = 0;
 	uint16_t	lastResult = 0;
+	uint16_t	tmpResult = 0;
+	sint16_union_t	Result;
 
 	if (str[0] == '-') {
 		negative	= 1;
@@ -237,20 +196,24 @@ uint8_t	ASCIItoDEC_s2byte (char* str, sint16_t* result)
 		return 4;
 	
 	if (negative)
-		*result = (sint16_t) ((sint16_t) 0 - tmpResult);
+		Result.sint = (sint16_t) ((sint16_t) 0 - tmpResult);
 	else
-		*result = (sint16_t) ((sint16_t) 0 + tmpResult);
+		Result.sint = (sint16_t) ((sint16_t) 0 + tmpResult);
+	
+	for (i = 0; i < 2; i++)
+		result[i] = Result.byte[i];
 
 	return 0;
 }
 
-uint8_t	ASCIItoDEC_u4byte (char* str, uint32_t* result)
+uint8_t	ASCIItoDEC_u4byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
 	
-	uint32_t	tmpResult = 0;
-	uint32_t	lastResult = 0;
+	uint32_t		lastResult = 0;
+	uint32_union_t	tmpResult;
+	tmpResult.uint = 0;
 	
 	WordLen = strlen(str);
 	if (WordLen == 0 || WordLen > 10)
@@ -258,20 +221,21 @@ uint8_t	ASCIItoDEC_u4byte (char* str, uint32_t* result)
 
 	for (i = 0; i < WordLen; i++) {
 		if (str[i] >= '0' && str[i] <= '9') {
-			tmpResult += (str[i] - '0') * power10(WordLen - i - 1);
-			if (tmpResult < lastResult)		// overflow protection!
+			tmpResult.uint += (str[i] - '0') * power10(WordLen - i - 1);
+			if (tmpResult.uint < lastResult)		// overflow protection!
 				return 3;
-			lastResult = tmpResult;
+			lastResult = tmpResult.uint;
 		} else
-			return 2;
+			return 20 + i;
 	}
 	
-	*result = (uint32_t) tmpResult;
+	for (i = 0; i < 4; i++)
+		result[i] = tmpResult.byte[i];
 	
 	return 0;
 }
 
-uint8_t	ASCIItoDEC_s4byte (char* str, sint32_t* result)
+uint8_t	ASCIItoDEC_s4byte (char* str, char* result)
 {
 	uint32_t	WordLen = 0;
 	uint32_t	i		= 0;
@@ -280,6 +244,7 @@ uint8_t	ASCIItoDEC_s4byte (char* str, sint32_t* result)
 	
 	uint32_t	tmpResult = 0;
 	uint32_t	lastResult = 0;
+	sint32_union_t	Result;
 
 	if (str[0] == '-') {
 		negative	= 1;
@@ -307,9 +272,12 @@ uint8_t	ASCIItoDEC_s4byte (char* str, sint32_t* result)
 		return 4;
 	
 	if (negative)
-		*result = (sint32_t) ((sint32_t) 0 - tmpResult);
+		Result.sint = (sint32_t) ((sint32_t) 0 - tmpResult);
 	else
-		*result = (sint32_t) ((sint32_t) 0 + tmpResult);
+		Result.sint = (sint32_t) ((sint32_t) 0 + tmpResult);
+	
+	for (i = 0; i < 4; i++)
+		result[i] = Result.byte[i];
 	
 	return 0;
 }

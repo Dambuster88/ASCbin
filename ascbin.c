@@ -7,6 +7,8 @@
 #include "hex.h"
 #include "flt.h"
 
+uint32_t WriteEndian (uint8_t str[], uint32_t len, uint8_t direction, FILE* output);
+
 int main (int argc, char *argv[])
 {
 	uint32_t	options	= 0;
@@ -19,9 +21,15 @@ int main (int argc, char *argv[])
 	uint32_t	inWords = 0;
 	uint32_t	WordInLine = 0;
 
-	char		tmpStr[4096];
+	char		LineStr[4096];
 	char*		pWord;
+	char*		pNumber;
+	char		pStr[4];
 	uint32_t	WordLen = 0;
+	uint8_t		WordType;
+	
+	uint32_t	FormatLen = 0;
+	uint32_t	FormatIndex = 0;
 	
 	char*		result;
 	
@@ -77,46 +85,115 @@ int main (int argc, char *argv[])
 		return 1;
 	}
 	
-	for (i = 0; i < 4096; i++) {
-		tmpStr[i] = 0x00;
-	}
+	for (i = 0; i < 4096; i++)
+		LineStr[i] = 0x00;
 	
-	for (result = fgets(tmpStr, 4096, pInputFile); result; result = fgets(tmpStr, 4096, pInputFile)) {
+	for (i = 0; i < 4; i++)
+		pStr[i] = 0x00;
+	
+	for (result = fgets(LineStr, 4096, pInputFile); result; result = fgets(LineStr, 4096, pInputFile)) {
 		inLines ++;
 		WordInLine = 0;
-		if (tmpStr != NULL) {
-			for (pWord = strtok(tmpStr, WORD_SEPARATORS); pWord != NULL; pWord = strtok(NULL, WORD_SEPARATORS)) {
+		
+		FormatIndex = 0;
+		
+		if (LineStr != NULL) {
+			for (pWord = strtok(LineStr, WORD_SEPARATORS); pWord != NULL; pWord = strtok(NULL, WORD_SEPARATORS)) {
 				if (pWord[0] == ';' || pWord[0] == '#')
 					break;
 				
 				inWords ++;
 				WordInLine ++;
 				WordLen = strlen (pWord);
+				if (WordLen == 0)
+					return 1;
 				
-				if (Options.AllTheSame == ANYKIND)
-					if (strchr(pWord, ':'))
-						if (strchr(pWord, '.'))
-							options = ALL_FLOAT;
-						else
-							options = ALL_DEC;
-					else
-						options = ALL_HEX;
-				else
-					options = Options.AllTheSame;
+				if (Options.Format) {
+					FormatLen = strlen (FORMAT);
+					if (FormatLen > FORMAT_MAX)
+						return 1;
+					
+					WordType = FORMAT[FormatIndex];
+					if (WordType == 0x00) {
+						printf ("ERROR: Line %u is bigger than the format string\r\n", inLines);
+						return 1;
+					}
+					pNumber = pWord;
+				} else {
+					if (Options.AllTheSame == ANYKIND) {
+						if (strchr(pWord, ':')) {
+							if (strchr(pWord, '.')) {
+								WordType = CheckFloat (pWord, &pNumber);
+								
+							} else {
+								WordType = CheckInt (pWord, &pNumber);
+							}
+						} else {
+							WordType = CheckHex (pWord, &pNumber);
+						}
+					} else {
+						WordType = Options.AllTheSame;
+					}
+				}
 				
-				switch (options) {
-					case ALL_HEX:
-					i = GetHex (pWord, Options.BigEndian, pOutputFile);
+				if (WordType == 0) {
+					printf ("ERROR: Word not detected well!\r\n");
+					return 1;
+				}
+				
+				switch (GET_TYPE(WordType)) {
+					case HEX:
+					i = ASCIItoHEX(pWord, pStr);
 					if (i) {
 						printf ("ERROR [%u]: Invalid HEX Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
 						return 1;
 					};
+					
+					if (GET_SIZE(WordType) == B1)
+						WordLen = 1;
+					else if (GET_SIZE(WordType) == B2)
+						WordLen = 2;
+					else if (GET_SIZE(WordType) == B3)
+						WordLen = 3;
+					else if (GET_SIZE(WordType) == B4)
+						WordLen = 4;
+					else
+						return 1;
 					break;
 					
-					case ALL_DEC:
-					i = GetDec (pWord, Options.BigEndian, pOutputFile);
+					case INT:
+					if (GET_SIZE(WordType) == B1)
+						if (GET_SIGN(WordType) == UNSIGNED) {
+							i = ASCIItoDEC_u1byte (pNumber, pStr);
+							WordLen = 1;
+						} else if (GET_SIGN(WordType) == SIGNED) {
+							i = ASCIItoDEC_s1byte (pNumber, pStr);
+							WordLen = 1;
+						} else
+							return 1;
+					else if (GET_SIZE(WordType) == B2)
+						if (GET_SIGN(WordType) == UNSIGNED) {
+							i = ASCIItoDEC_u2byte (pNumber, pStr);
+							WordLen = 2;
+						} else if (GET_SIGN(WordType) == SIGNED) {
+							i = ASCIItoDEC_s2byte (pNumber, pStr);
+							WordLen = 2;
+						} else
+							return 1;
+					else if (GET_SIZE(WordType) == B4)
+						if (GET_SIGN(WordType) == UNSIGNED) {
+							i = ASCIItoDEC_u4byte (pNumber, pStr);
+							WordLen = 4;
+						} else if (GET_SIGN(WordType) == SIGNED) {
+							i = ASCIItoDEC_s4byte (pNumber, pStr);
+							WordLen = 4;
+						} else
+							return 1;
+					else
+						return 1;
+						
 					if (i) {
 						printf ("ERROR [%u]: Invalid DEC Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
@@ -124,16 +201,18 @@ int main (int argc, char *argv[])
 					};
 					break;
 					
-					case ALL_FLOAT:
-					i = GetFlt (pWord, Options.BigEndian, pOutputFile);
-					if (i) {
+					case FLOAT:
+					i = ASCIItoFLOAT (pNumber, pStr);
+					if (i == 0x00) {
 						printf ("ERROR [%u]: Invalid FLOAT Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);
 						fclose (pOutputFile);
+						return 1;
 					};
+					WordLen = 4;
 					break;
 					
-					case ALL_ASCII:
+					case ASCII:
 					printf ("ASCII chars not implemented yet!\r\n");
 					return 0;
 					
@@ -143,6 +222,16 @@ int main (int argc, char *argv[])
 					fclose (pOutputFile);
 					return 1;
 				}
+				
+				i = WriteEndian (pStr, WordLen, Options.BigEndian, pOutputFile);
+				if (i) {
+					printf ("ERROR [%u]: Can not write the following: %02X %02X %02X %02X \r\n", i, pStr[3], pStr[2], pStr[1], pStr[0]);
+					fclose (pInputFile);
+					fclose (pOutputFile);
+					return 1;
+				};
+				
+				FormatIndex ++;
 			}
 		} else {
 			printf ("ERROR: Unknown error occurred at read!\r\n");
@@ -161,6 +250,29 @@ int main (int argc, char *argv[])
 	
 	printf ("Operation completed!\r\n");
 	
+	return 0;
+}
+
+uint32_t WriteEndian (uint8_t str[], uint32_t len, uint8_t direction, FILE* output)
+{
+	uint32_t	i = 0;
+	if (len > 4)
+		return 1;
+	
+	if (direction == BIG_ENDIAN) {
+		for (i = len; i > 0; i--)
+			if (fputc(str[i-1], output) != str[i-1])
+				return 30+i;
+	} else if (direction == LITTLE_ENDIAN) {
+		for (i = 0; i < len; i++)
+			if (fputc(str[i], output) != str[i])
+				return 40+i;
+	} else
+		return 20;
+	
+	for (i = 0; i < 4; i++)
+		str[i] = 0x00;
+
 	return 0;
 }
 

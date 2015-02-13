@@ -280,6 +280,10 @@ uint32_t GetFormat (char text[])
 				FORMAT[index] |= (B2 & FORMAT_SIZE);
 				break;
 				
+				case '3':
+				FORMAT[index] |= (B3 & FORMAT_SIZE);
+				break;
+				
 				case '4':
 				FORMAT[index] |= (B4 & FORMAT_SIZE);
 				break;
