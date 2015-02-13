@@ -6,7 +6,7 @@
 #include "args.h"
 #include "dec.h"
 
-uint32_t GetFlt (char* str, uint8_t BigEndian, FILE* output)
+uint32_t CheckFloat (char* str, char** OutStr)
 {
 	uint32_t	i = 0;
 	uint32_t	WordLen = 0;
@@ -18,29 +18,28 @@ uint32_t GetFlt (char* str, uint8_t BigEndian, FILE* output)
 	WordLen = strlen (str);
 	
 	if (str[0] == ':' && WordLen > 3) {
-		pWord = &str[1];
+		*OutStr = &str[1];
 	} else if (str[1] == ':' && WordLen > 4 && str[0] == '4') {
-		pWord = &str[2];
-	} else if (str[2] == ':' && WordLen > 5 && str[0] == '4' && str[1] == 'u') {
-		pWord = &str[3];
+		*OutStr = &str[2];
 	} else 
-		return 1;
+		return 0;
+	
+	return SET_TYPE(FLOAT);
+}
 
-	flt.fl	= (float) atof (pWord);	// FIXME:	FIXIT:	TODO:	To be changed, it is rinsky!
-	chars = flt.byte;
+uint32_t ASCIItoFLOAT (char* str, char* result)
+{
+	uint32_t		i = 0;
+	float_union_t	flt;
 	
-	if (BigEndian == BIG_ENDIAN) {
-		for (i = 4; i > 0; i--)
-			if (fputc(chars[i-1], output) != chars[i-1])
-				return 21;
-	} else if (BigEndian == LITTLE_ENDIAN) {
-		for (i = 0; i < 4; i++)
-			if (fputc(chars[i], output) != chars[i])
-				return 22;
-	} else
-		return 20;
+	// TODO: Check the range!!!
 	
+	flt.fl	= (float) atof (str);	// FIXME:	FIXIT:	TODO:	To be changed, it is risky!
 	
-	return 0;
+	for (i = 0; i < 4; i++) {
+		result[i] = flt.byte[i];
+	}
+	
+	return 1;
 }
 

@@ -5,32 +5,45 @@
 #include "hex.h"
 #include "args.h"
 
-uint32_t GetHex (char* str, uint8_t BigEndian, FILE* output)
+uint32_t CheckHex (char* str, char** OutStr)
 {
-	uint32_t	i			= 0;
 	uint32_t	WordLen 	= 0;
-	uint8_t		chars[4];
-	uint8_t		tmpCharR	= 0x00;
+	uint8_t		result = 0;
 	
 	WordLen = strlen (str);
 	if (WordLen == 0 || WordLen % 2 || WordLen > 8)
+		return 0;
+	
+	*OutStr = &str[0];
+	
+	if (WordLen == 8)
+		result = B4;
+	else if (WordLen == 6)
+		result = B3;
+	else if (WordLen == 4)
+		result = B2;
+	else if (WordLen == 2)
+		result = B1;
+	else 
+		return 0;
+	
+	return SET_TYPE(HEX) | SET_SIZE(result);
+}
+
+uint32_t ASCIItoHEX (char* str, char* result)
+{
+	uint32_t	i = 0;
+	uint32_t	WordLen = 0;
+	char*		chars;
+	
+	WordLen = strlen (str);
+	if (WordLen == 0)
 		return 1;
 	
 	for (i = 0; i < WordLen/2; i++) {
-		if (CHARtoHEX(&str[i*2], &chars[i]))
+		if (CHARtoHEX(&str[i*2], &result[i]))
 			return 2;
 	}
-	
-	if (BigEndian == LITTLE_ENDIAN) {
-		for (i = WordLen/2; i > 0; i--)
-			if (fputc(chars[i-1], output) != chars[i-1])
-				return 31;
-	} else if (BigEndian == BIG_ENDIAN) {
-		for (i = 0; i < WordLen/2; i++)
-			if (fputc (chars[i], output) != chars[i])
-				return 32;
-	} else
-		return 30;
 	
 	return 0;
 }
