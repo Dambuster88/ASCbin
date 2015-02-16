@@ -6,6 +6,16 @@
 #include "args.h"
 #include "hex.h"
 #include "flt.h"
+#include "version.h"
+
+/* definition to expand macro then apply to pragma message */
+#define VALUE_TO_STRING(x) #x
+#define VALUE(x) VALUE_TO_STRING(x)
+#define VAR_NAME_VALUE(var) #var " = "  VALUE(var)
+
+#if (!defined SHA1 && (VER_SW_MAJOR == 0 && VER_SW_MINOR == 0))
+	#error "No version detected!"
+#endif
 
 uint32_t WriteEndian (uint8_t str[], uint32_t len, uint8_t direction, FILE* output);
 
@@ -38,6 +48,7 @@ int main (int argc, char *argv[])
 	Options.Separator	= 0;
 	Options.Format		= 0;
 
+	printf ("Version: %u.%u.%u\r\n", VER_SW_MAJOR, VER_SW_MINOR, VER_SW_REVISION, SHA1);
 	
 	if (argc > 1) {
 		if (argv[1][0] == '-' || argv[1][0] == '/') {
