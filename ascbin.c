@@ -48,7 +48,10 @@ int main (int argc, char *argv[])
 			}
 			
 			if (Options.Separator)
-				GetSeparators (argv[2]);
+				if (GetSeparators (argv[2])) {
+					printf ("ERROR: Invalid separator!\r\n");
+					return 1;
+				}
 			
 			if (Options.Format)
 				if (Options.Separator)

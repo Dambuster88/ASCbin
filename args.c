@@ -5,6 +5,7 @@
 #include "args.h"
 
 char WORD_SEPARATORS [SEPARATORS_MAX]	= " \t\r\n";
+const char DENIED_SEPARATOR [] = ":.+-0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ";
 char FORMAT[FORMAT_MAX];
 
 uint32_t GetArgs (char argv[])
@@ -108,6 +109,8 @@ uint32_t GetSeparators (char text[])
 	
 	index = strlen (WORD_SEPARATORS);
 	WordLen = strlen (text);
+	if  (WordLen == 0)
+		return 1;
 	
 	for (i = 0; i < WordLen && index < 20; i++) {
 		if (text[i] == '\\') {
@@ -201,12 +204,19 @@ uint32_t GetSeparators (char text[])
 			new_separator = text[i];
 		}
 		
+		if (strchr(DENIED_SEPARATOR, new_separator)) {
+			printf ("ERROR: The \"%c\" separator si denied!\r\n", new_separator);
+			return 1;
+		}
+		
 		if (!strchr(WORD_SEPARATORS, new_separator)) {
 			WORD_SEPARATORS[index] = new_separator;
 			index++;
 		}
 		// else {nothing to do!}
 	}
+	
+	return 0;
 }
 
 uint32_t GetFormat (char text[])
