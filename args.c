@@ -236,7 +236,7 @@ uint32_t GetFormat (char text[])
 	for (i = 0; i < FORMAT_MAX; i++)
 		FORMAT[i] = 0x00;
 	
-	for (pWord = strtok(text, " "); pWord != NULL; pWord = strtok(NULL, " ")) {
+	for (pWord = strtok(text, " \t"); pWord != NULL; pWord = strtok(NULL, " \t")) {
 		if (index == FORMAT_MAX) {
 			printf ("ERROR: Format argument is too long!\r\n");
 			return 20;
