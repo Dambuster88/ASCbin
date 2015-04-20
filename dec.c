@@ -23,38 +23,41 @@ uint32_t CheckInt (char* str, char** OutStr)
 	uint32_union_t	tmp32;
 	sint32_union_t	stmp32;
 	
-	uint8_t	result;
+	WordFormat_t	result;
+	result.byte = 0;
 	
 	WordLen = strlen (str);
 	if (WordLen <= 2)
-		return 1;
+		return 0x81;
 	
 	if (str[1] != ':') {
 		if (str[1] == 's' && str[2] == ':' && WordLen > 3) {			// signed
-			sig = 1;
+			result.Sign = 1;
 			pWord = &str[3];
 		} else if (str[1] == 'u' && str[2] == ':' && WordLen > 3) {		// unsigned
-			sig = 0;
+			result.Sign = 0;
 			pWord = &str[3];
 			if (pWord[0] == '-')
-				return 3;
+				return 0x83;
 		} else
-			return 2;
+			return 0x82;
 	} else
 		pWord = &str[2];
 	
 	if (str[0] == '4')
-		result = B4;
+		result.Size = B4;
 	else if (str[0] == '2')
-		result = B2;
+		result.Size = B2;
 	else if (str[0] == '1')
-		result = B1;
+		result.Size = B1;
 	else
-		return 4;
+		return 0x84;
 	
 	*OutStr = pWord;
 
-	return SET_TYPE(INT) | SET_SIGN(sig) | SET_SIZE(result);
+	result.Type = INT;
+	printf ("result: %d %d %d\r\n", result.Type, result.Sign, result.Size);
+	return result.byte;
 }
 
 uint8_t	ASCIItoDEC_u1byte (char* str, char* result)

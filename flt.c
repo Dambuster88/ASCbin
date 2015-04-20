@@ -13,6 +13,9 @@ uint32_t CheckFloat (char* str, char** OutStr)
 	char*		pWord;
 	uint8_t*	chars;
 	
+	WordFormat_t	result;
+	result.byte = 0;
+	
 	float_union_t flt;
 	
 	WordLen = strlen (str);
@@ -22,9 +25,10 @@ uint32_t CheckFloat (char* str, char** OutStr)
 	} else if (str[1] == ':' && WordLen > 4 && str[0] == '4') {
 		*OutStr = &str[2];
 	} else 
-		return 0;
+		return 0x80;
 	
-	return SET_TYPE(FLOAT);
+	result.Type = FLOAT;
+	return result.byte;
 }
 
 uint32_t ASCIItoFLOAT (char* str, char* result)

@@ -6,6 +6,7 @@
 #include "args.h"
 #include "hex.h"
 #include "flt.h"
+#include "format.h"
 
 uint32_t WriteEndian (uint8_t str[], uint32_t len, uint8_t direction, FILE* output);
 
@@ -26,7 +27,7 @@ int main (int argc, char *argv[])
 	char*		pNumber;
 	char		pStr[4];
 	uint32_t	WordLen = 0;
-	uint8_t		WordType;
+	WordFormat_t	WordType;
 	
 	uint32_t	FormatLen = 0;
 	uint32_t	FormatIndex = 0;
@@ -58,6 +59,10 @@ int main (int argc, char *argv[])
 				else
 					i = GetFormat (argv[2]);
 
+			FormatLen = strlen ((char*)FORMAT);
+			if (FormatLen > FORMAT_MAX)
+				return 1;
+			
 			if (i) {
 				printf ("ERROR[%u]: Invalid Line Format!\r\n", i);
 				return 1;
@@ -98,6 +103,7 @@ int main (int argc, char *argv[])
 		WordInLine = 0;
 		
 		FormatIndex = 0;
+		WordType.byte = 0;
 		
 		if (LineStr != NULL) {
 			for (pWord = strtok(LineStr, WORD_SEPARATORS); pWord != NULL; pWord = strtok(NULL, WORD_SEPARATORS)) {
@@ -110,13 +116,17 @@ int main (int argc, char *argv[])
 				if (WordLen == 0)
 					return 1;
 				
-				if (Options.Format) {
-					FormatLen = strlen (FORMAT);
-					if (FormatLen > FORMAT_MAX)
+				pNumber = strchr (pWord, ':');
+				if (pNumber != NULL && pWord != pNumber) {
+					pNumber++;
+					WordType.byte = GetFormat_Word(pWord);
+					if (WordType.Size != FORMAT[FormatIndex].Size) {
+						printf ("ERROR: Line %u, word %u is different in size!\r\n", inLines, FormatIndex);
 						return 1;
-					
-					WordType = FORMAT[FormatIndex];
-					if (WordType == 0x00) {
+					}
+				} else if (Options.Format) {
+					WordType.byte = FORMAT[FormatIndex].byte;
+					if (WordType.byte == 0x00) {
 						printf ("ERROR: Line %u is bigger than the format string\r\n", inLines);
 						return 1;
 					}
@@ -125,25 +135,25 @@ int main (int argc, char *argv[])
 					if (Options.AllTheSame == ANYKIND) {
 						if (strchr(pWord, ':')) {
 							if (strchr(pWord, '.')) {
-								WordType = CheckFloat (pWord, &pNumber);
+								WordType.byte = CheckFloat (pWord, &pNumber);
 								
 							} else {
-								WordType = CheckInt (pWord, &pNumber);
+								WordType.byte = CheckInt (pWord, &pNumber);
 							}
 						} else {
-							WordType = CheckHex (pWord, &pNumber);
+							WordType.byte = CheckHex (pWord, &pNumber);
 						}
 					} else {
-						WordType = Options.AllTheSame;
+						WordType.byte = Options.AllTheSame;
 					}
 				}
-				
-				if (WordType == 0) {
+
+				if (WordType.byte == 0) {
 					printf ("ERROR: Word not detected well!\r\n");
 					return 1;
 				}
 				
-				switch (GET_TYPE(WordType)) {
+				switch (WordType.Type) {
 					case HEX:
 					i = ASCIItoHEX(pWord, pStr);
 					if (i) {
@@ -153,42 +163,42 @@ int main (int argc, char *argv[])
 						return 1;
 					};
 					
-					if (GET_SIZE(WordType) == B1)
+					if (WordType.Size == B1)
 						WordLen = 1;
-					else if (GET_SIZE(WordType) == B2)
+					else if (WordType.Size == B2)
 						WordLen = 2;
-					else if (GET_SIZE(WordType) == B3)
+					else if (WordType.Size == B3)
 						WordLen = 3;
-					else if (GET_SIZE(WordType) == B4)
+					else if (WordType.Size == B4)
 						WordLen = 4;
 					else
 						return 1;
 					break;
 					
 					case INT:
-					if (GET_SIZE(WordType) == B1)
-						if (GET_SIGN(WordType) == UNSIGNED) {
+					if (WordType.Size == B1)
+						if (WordType.Sign == UNSIGNED) {
 							i = ASCIItoDEC_u1byte (pNumber, pStr);
 							WordLen = 1;
-						} else if (GET_SIGN(WordType) == SIGNED) {
+						} else if (WordType.Sign == SIGNED) {
 							i = ASCIItoDEC_s1byte (pNumber, pStr);
 							WordLen = 1;
 						} else
 							return 1;
-					else if (GET_SIZE(WordType) == B2)
-						if (GET_SIGN(WordType) == UNSIGNED) {
+					else if (WordType.Size == B2)
+						if (WordType.Sign == UNSIGNED) {
 							i = ASCIItoDEC_u2byte (pNumber, pStr);
 							WordLen = 2;
-						} else if (GET_SIGN(WordType) == SIGNED) {
+						} else if (WordType.Sign == SIGNED) {
 							i = ASCIItoDEC_s2byte (pNumber, pStr);
 							WordLen = 2;
 						} else
 							return 1;
-					else if (GET_SIZE(WordType) == B4)
-						if (GET_SIGN(WordType) == UNSIGNED) {
+					else if (WordType.Size == B4)
+						if (WordType.Sign == UNSIGNED) {
 							i = ASCIItoDEC_u4byte (pNumber, pStr);
 							WordLen = 4;
-						} else if (GET_SIGN(WordType) == SIGNED) {
+						} else if (WordType.Sign == SIGNED) {
 							i = ASCIItoDEC_s4byte (pNumber, pStr);
 							WordLen = 4;
 						} else

@@ -1,6 +1,8 @@
 #ifndef _ARGS_H_
 #define _ARGS_H_
 
+#include "stdio.h"
+
 #define SEPARATORS_MAX	20
 #define FORMAT_MAX		20
 
@@ -48,6 +50,16 @@ enum {
 	BIG_ENDIAN
 };
 
+typedef union WordFormat_tag{
+	uint8_t	byte;
+	struct {
+		uint8_t	Size:2;
+		uint8_t	Sign:1;
+		uint8_t	Type:4;
+		uint8_t	:1;
+	};
+} WordFormat_t;
+
 struct Options_tag {
 	uint8_t	AllTheSame;
 	uint8_t BigEndian;
@@ -56,7 +68,7 @@ struct Options_tag {
 } Options;
 
 extern char WORD_SEPARATORS[];
-extern char FORMAT[];
+extern WordFormat_t FORMAT[];
 
 uint32_t GetArgs (char argv[]);
 uint32_t GetSeparators (char text[]);
