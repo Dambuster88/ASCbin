@@ -155,7 +155,7 @@ int main (int argc, char *argv[])
 				
 				switch (WordType.Type) {
 					case HEX:
-					i = ASCIItoHEX(pWord, pStr);
+					i = ASCIItoHEX(pNumber, pStr);
 					if (i) {
 						printf ("ERROR [%u]: Invalid HEX Word at line %u, word %u: %s\r\n", i, inLines, WordInLine, pWord);
 						fclose (pInputFile);

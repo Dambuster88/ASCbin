@@ -44,7 +44,7 @@ uint32_t ASCIItoHEX (char* str, char* result)
 	
 	for (i = 0; i < WordLen/2; i++) {
 		if (CHARtoHEX(&str[i*2], &result[WordLen/2 - i - 1])) // Write Little Endian, from the end to the start!
-			return 2;
+			return 2+i;
 	}
 	
 	return 0;
