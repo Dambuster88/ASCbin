@@ -3,10 +3,11 @@
 #include <string.h>
 #include "type_defines.h"
 #include "args.h"
+#include "format.h"
 
 char WORD_SEPARATORS [SEPARATORS_MAX]	= " \t\r\n";
 const char DENIED_SEPARATOR [] = ":.+-0123456789abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ";
-char FORMAT[FORMAT_MAX];
+WordFormat_t FORMAT[FORMAT_MAX];
 
 uint32_t GetArgs (char argv[])
 {
@@ -230,11 +231,11 @@ uint32_t GetFormat (char text[])
 	
 	uint32_t	StrLen = strlen(text);
 	
+	for (i = 0; i < FORMAT_MAX; i++)
+		FORMAT[i].byte = 0x00;
+	
 	if (StrLen == 0)
 		return 1;
-	
-	for (i = 0; i < FORMAT_MAX; i++)
-		FORMAT[i] = 0x00;
 	
 	for (pWord = strtok(text, " \t"); pWord != NULL; pWord = strtok(NULL, " \t")) {
 		if (index == FORMAT_MAX) {
@@ -242,96 +243,14 @@ uint32_t GetFormat (char text[])
 			return 20;
 		}
 		
-		WordLen = strlen (pWord);
-		if (WordLen == 0 || WordLen > 3)
+		FORMAT[index].byte = GetFormat_Word(pWord);
+		if (FORMAT[index].byte == 0) {
 			return 21;
-		
-		switch (pWord[0]) {
-			case 'h':
-			if (WordLen == 2)
-				FORMAT[index] = ((HEX << 4) & FORMAT_TYPE);
-			else 
-				return 31;
-			break;
-			
-			case 'i':
-			if (WordLen == 2 || WordLen == 3)
-				FORMAT[index] = ((INT << 4) & FORMAT_TYPE);
-			else
-				return 32;
-			break;
-			
-			case 'f':
-			if (WordLen == 1)
-				FORMAT[index] = ((FLOAT << 4) & FORMAT_TYPE);
-			else
-				return 33;
-			break;
-			
-			case 'a':
-			if (WordLen == 1)
-				FORMAT[index] = ((ASCII << 4) & FORMAT_TYPE);
-			else
-				return 34;
-			break;
-			
-			default:
-			printf ("ERROR: Unknown word format:%s!\r\n", pWord);
-			return 30;
 		}
-		
-		if (pWord[0] == 'h' || pWord[0] == 'i')
-			switch (pWord[1]) {
-				case '1':
-				FORMAT[index] |= (B1 & FORMAT_SIZE);
-				break;
-				
-				case '2':
-				FORMAT[index] |= (B2 & FORMAT_SIZE);
-				break;
-				
-				case '3':
-				FORMAT[index] |= (B3 & FORMAT_SIZE);
-				break;
-				
-				case '4':
-				FORMAT[index] |= (B4 & FORMAT_SIZE);
-				break;
-				
-				default:
-				printf ("ERROR: Unknown word length:%s\r\n", pWord);
-				return 22;
-			}
-		
-		if (pWord[0] == 'i')
-			if (WordLen == 3)
-				switch (pWord[2]) {
-					case 's':
-					FORMAT[index] |= ((SIGNED << 2) & FORMAT_SIGN);
-					break;
-					
-					case 'u':
-					FORMAT[index] |= ((UNSIGNED << 2) & FORMAT_SIGN);
-					break;
-					
-					default:
-					printf ("ERROR: Unknown signes of the word:%s\r\n", pWord);
-					return 23;
-				}
-			else
-				FORMAT[index] |= ((UNSIGNED << 2) & FORMAT_SIGN);
 		
 		index++;
 	}
 	
-#if 0
-	WordLen = strlen (FORMAT);
-	printf ("FORMAT [%u]:", WordLen);
-	for (i = 0; i < WordLen; i++)
-		printf ("%02X\t", (char)FORMAT[i]);
-	printf ("\r\n");
-#endif	
-
 	return 0;
 }
 

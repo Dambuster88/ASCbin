@@ -7,27 +7,29 @@
 
 uint32_t CheckHex (char* str, char** OutStr)
 {
-	uint32_t	WordLen 	= 0;
-	uint8_t		result = 0;
+	uint32_t		WordLen 	= 0;
+	WordFormat_t	result;
+	result.byte = 0;
 	
 	WordLen = strlen (str);
 	if (WordLen == 0 || WordLen % 2 || WordLen > 8)
-		return 0;
+		return 0x80;
 	
 	*OutStr = &str[0];
 	
 	if (WordLen == 8)
-		result = B4;
+		result.Size = B4;
 	else if (WordLen == 6)
-		result = B3;
+		result.Size = B3;
 	else if (WordLen == 4)
-		result = B2;
+		result.Size = B2;
 	else if (WordLen == 2)
-		result = B1;
+		result.Size = B1;
 	else 
-		return 0;
+		return 0x81;
 	
-	return SET_TYPE(HEX) | SET_SIZE(result);
+	result.Type = HEX;
+	return result.byte;
 }
 
 uint32_t ASCIItoHEX (char* str, char* result)
@@ -42,7 +44,7 @@ uint32_t ASCIItoHEX (char* str, char* result)
 	
 	for (i = 0; i < WordLen/2; i++) {
 		if (CHARtoHEX(&str[i*2], &result[WordLen/2 - i - 1])) // Write Little Endian, from the end to the start!
-			return 2;
+			return 2+i;
 	}
 	
 	return 0;
